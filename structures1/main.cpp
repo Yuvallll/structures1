@@ -122,7 +122,7 @@ int main() {
 
 
         else if (test.r->right == nullptr){
-            int v =  }test.r->left->value;
+            int v = test.r->left->value;
             test.deleteNode(test.r, v);
             test.r->value = v;
         }

@@ -151,7 +151,7 @@ public:
     Node<T, Cond>* Delete(Node<T, Cond>* root, T val) {
         Cond c = Cond();
 
-        // base case
+        // base case (if node not found)
         if (root == nullptr) {
             return nullptr;
         }
@@ -171,14 +171,14 @@ public:
             // node with only one child or no child
             if (root -> left == nullptr) {
                 Node<T, Cond> * temp = root -> right;
-                root->value.reset();
-                delete root;
+                //delete root; >> causes problems
+                root = nullptr;
                 return temp;
             }
             else if (root -> right == nullptr) {
                 Node<T, Cond> * temp = root -> left;
-                root->value.reset();
-                delete root;
+                //delete root;
+                root = nullptr;
                 return temp;
             }
             else {
@@ -214,16 +214,18 @@ public:
         return root;
     }
 
-   Node<T, Cond>* deleteNode(Node<T, Cond>* root, T val)
-   {
-        if (root->left == nullptr && root->right == nullptr && root->value == val){
-            root->value = nullptr;
-            //delete root;
-            root = nullptr;
+   Node<T, Cond>* deleteNode(Node<T, Cond>* root, T val){
+        if (root == nullptr)
+            return nullptr;
+
+        //tree with onl one node, which we want to remove
+        else if (this->height(root) == 0 && r->left == nullptr && r->right == nullptr && root->value == val){
+            //root -> value = nullptr;////////
+            r = nullptr;///changed from root = nullptr (we didn't initialize the original root)
             return nullptr;
         }
 
-        else{
+        else {
             return Delete(root, val);
         }
    }

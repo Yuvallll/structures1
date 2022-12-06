@@ -6,61 +6,27 @@
 
 #IncludeRegexTransform: 
 
-C:/Users/elad/CLionProjects/structures1/AVLTree.cpp
-AVLTree.h
-C:/Users/elad/CLionProjects/structures1/AVLTree.h
-
 C:/Users/elad/CLionProjects/structures1/AVLTree.h
 iostream
 -
 memory
 -
 
-C:/Users/elad/CLionProjects/structures1/Functors.cpp
-Functors.h
-C:/Users/elad/CLionProjects/structures1/Functors.h
-
 C:/Users/elad/CLionProjects/structures1/Functors.h
 Team.h
 C:/Users/elad/CLionProjects/structures1/Team.h
-
-C:/Users/elad/CLionProjects/structures1/Player.cpp
-Player.h
-C:/Users/elad/CLionProjects/structures1/Player.h
 
 C:/Users/elad/CLionProjects/structures1/Player.h
 AVLTree.h
 C:/Users/elad/CLionProjects/structures1/AVLTree.h
 
-C:/Users/elad/CLionProjects/structures1/Team.cpp
-Team.h
-C:/Users/elad/CLionProjects/structures1/Team.h
-
 C:/Users/elad/CLionProjects/structures1/Team.h
 Player.h
 C:/Users/elad/CLionProjects/structures1/Player.h
-
-C:/Users/elad/CLionProjects/structures1/main.cpp
-worldcup2a2.h
-C:/Users/elad/CLionProjects/structures1/worldcup2a2.h
-string
--
-iostream
--
-AVLTree.h
-C:/Users/elad/CLionProjects/structures1/AVLTree.h
-worldcup23a1.h
-C:/Users/elad/CLionProjects/structures1/worldcup23a1.h
 
 C:/Users/elad/CLionProjects/structures1/wet1util.h
 stdexcept
 -
-
-C:/Users/elad/CLionProjects/structures1/worldcup23a1.h
-wet1util.h
-C:/Users/elad/CLionProjects/structures1/wet1util.h
-Functors.h
-C:/Users/elad/CLionProjects/structures1/Functors.h
 
 C:/Users/elad/CLionProjects/structures1/worldcup2a2.cpp
 worldcup2a2.h

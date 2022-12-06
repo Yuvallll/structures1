@@ -1,4 +1,19 @@
 #include "worldcup2a2.h"
+template <class Cond>
+
+void print2D(Node<std::shared_ptr<Player>, Cond>* root, int space) {
+    if (root == nullptr) // Base case  1
+        return;
+
+    space += SPACE; // Increase distance between levels   2
+    print2D(root -> right, space); // Process right child first 3
+    std::cout << std::endl;
+
+    for (int i = SPACE; i < space; i++) // 5
+        std::cout << " "; // 5.1
+    std::cout << root -> value->get_id() << "\n"; // 6
+    print2D(root -> left, space); // Process left child  7
+}
 
 template <class S, class Cond>
 void delete_tree(AVLTree<std::shared_ptr<S>, Cond> t);
@@ -91,9 +106,12 @@ StatusType world_cup_t::add_player(int playerId, int teamId, int gamesPlayed, in
         playersByRank.r = playersByRank.insert(playersByRank.r, &player_by_rank);
         playersByGoals.r = playersByGoals.insert(playersByGoals.r, &player_by_goals);
 
+        if (player_by_rank.value == nullptr)
+            topPlayer = player_by_rank.value;
 
         // check if the new player is the new top player //
-        if(playersByRank.maxValueNode(playersByRank.r) -> value -> get_id() == player_by_rank.value->get_id())
+        if (playersByRank.maxValueNode(playersByRank.r) -> value -> get_id() ==
+        player_by_rank.value->get_id())
         {
             topPlayer.swap(player_by_rank.value);
         }
@@ -104,7 +122,12 @@ StatusType world_cup_t::add_player(int playerId, int teamId, int gamesPlayed, in
         return StatusType::ALLOCATION_ERROR;
     }
 
-    std::cout << "use count: " << allPlayers.r->value.use_count() << std::endl;
+    //std::cout << "root after insert: " << (allPlayers.r->value->get_id()) << std::endl;
+
+    //std::cout << "use count: " << allPlayers.r->value.use_count() << std::endl;
+
+    if (allPlayers.height(allPlayers.r) != -1)
+        print2D(allPlayers.r, 5);
 
     return StatusType::SUCCESS;
 }
@@ -121,32 +144,42 @@ StatusType world_cup_t::remove_player(int playerId)
         Node<std::shared_ptr<Player>, PlayerById>* player_to_remove = find_player_by_id(allPlayers.r, playerId);
         if (player_to_remove == nullptr)
             return StatusType::FAILURE;
-        std::cout << "after find" << std::endl;
 
         //remove from ranking tree
         playersByRank.deleteNode(playersByRank.r, player_to_remove->value);
-        std::cout << "after delete from rank tree" << std::endl;
 
         //if needed, replace the top player with the second best
         if (topPlayer->get_id() == player_to_remove->value->get_id()){
-            topPlayer.reset(/*playersByRank.maxValueNode(playersByRank.r)->value*/);
+            topPlayer.swap(playersByRank.maxValueNode(playersByRank.r)->value);
         }
-        std::cout << "after top player check" << std::endl;
 
         //remove from goals tree
         playersByGoals.deleteNode(playersByGoals.r, player_to_remove->value);
-        std::cout << "after delete from goals tree" << std::endl;
-
 
         //std::cout << "use count: " << player_to_remove->value.use_count() << std::endl;
 
         //remove from the main players tree
-        allPlayers.deleteNode(allPlayers.r, player_to_remove->value);
-        std::cout << "after delete from main tree" << std::endl;
+        allPlayers.r = allPlayers.deleteNode(allPlayers.r, player_to_remove->value);
 
-        std::cout << "height: " << (allPlayers.height(allPlayers.r)) << std::endl;
+        if(allPlayers.r == nullptr || allPlayers.r->value == nullptr)
+            std::cout << "root after delete: nullptr" << std::endl;
+        else {
+            std::cout << "root after delete: " << (allPlayers.r->value->get_id()) << std::endl;
+            print2D(allPlayers.r, 5);
+        }
 
-        std::cout << "is root null: " << (allPlayers.r->value == nullptr) << std::endl;
+        std::cout << "use count before last delete: " <<player_to_remove->value.use_count() << std::endl;
+
+        player_to_remove->left = nullptr;
+        player_to_remove->right = nullptr;
+        player_to_remove -> value = nullptr;
+
+        std::cout << "use count after last delete: " <<player_to_remove->value.use_count() << std::endl;
+
+
+        //std::cout << "height: " << (allPlayers.height(allPlayers.r)) << std::endl;
+
+        //std::cout << "is root null: " << (allPlayers.r == nullptr) << std::endl;
     }
 
     catch (const std::exception &e) {
@@ -294,7 +327,7 @@ Node<std::shared_ptr<Player>, Cond>* find_player_by_cond(Node<std::shared_ptr<Pl
  {
     Cond c = Cond();
 
-    if (root == nullptr) {
+    if (root == nullptr || root->value == nullptr) {
         return nullptr;
     }
     if (c(root->value, player)) { //player > root -> player
