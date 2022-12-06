@@ -22,7 +22,7 @@
 
 class world_cup_t {
 private:
-    std::shared_ptr<Player> topPlayer;
+    std::shared_ptr<Player> topPlayer;  // player with the highest rank //
     AVLTree<std::shared_ptr<Player>, PlayerById> allPlayers;
     AVLTree<std::shared_ptr<Player>, PlayerByRank> playersByRank;
     AVLTree<std::shared_ptr<Player>, PlayerByGoals> playersByGoals;

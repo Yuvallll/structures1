@@ -41,24 +41,26 @@ StatusType world_cup_t::add_team(int teamId, int points)
         Node<std::shared_ptr<Team>, TeamById> to_add(std::move(team_to_add));// move? רק מעדכן את השורש
 
         allTeams.r =  allTeams.insert(allTeams.r, &to_add);
-        std::cout << allTeams.r->value->getId() <<std::endl;
-
-        return StatusType::SUCCESS;
+        //std::cout << allTeams.r->value->getId() <<std::endl;
     }
+
     catch (const std::exception& e) {
         return StatusType::ALLOCATION_ERROR;
     }
+
+    return StatusType::SUCCESS;
 }
 
 StatusType world_cup_t::remove_team(int teamId) {
     if (teamId <= 0)
         return StatusType::INVALID_INPUT;
 
-    Node<std::shared_ptr<Team>, TeamById>* team_to_remove = find_team(allTeams.r, teamId);
-    if (team_to_remove == nullptr || allTeams.height(allTeams.r) == -1)
-        return StatusType::FAILURE;
-
     try {
+        Node<std::shared_ptr<Team>, TeamById>* team_to_remove = find_team(allTeams.r, teamId);
+        if (team_to_remove == nullptr || allTeams.height(allTeams.r) == -1)
+            return StatusType::FAILURE;
+
+        legalTeams.deleteNode(legalTeams.r, team_to_remove->value);
         allTeams.deleteNode(allTeams.r, team_to_remove->value);
     }
 
@@ -68,16 +70,91 @@ StatusType world_cup_t::remove_team(int teamId) {
     return StatusType::SUCCESS;
 }
 
-StatusType world_cup_t::add_player(int playerId, int teamId, int gamesPlayed, int goals, int cards, bool goalKeeper)
-{
-    // TODO: Your code goes here
+StatusType world_cup_t::add_player(int playerId, int teamId, int gamesPlayed, int goals, int cards, bool goalKeeper) {
+    if ((playerId <= 0 || teamId <= 0 || gamesPlayed < 0 || goals < 0 || cards < 0)
+        || (gamesPlayed == 0 && (goals > 0 || cards > 0))) {
+        return StatusType::INVALID_INPUT;
+    }
+    // if there is a player with this ID or teamId does not exist //
+    if((find_player_by_id(allPlayers.r, playerId) != nullptr) || (find_team(allTeams.r, teamId) == nullptr))
+    { return StatusType::FAILURE; }
+
+    try {
+        std::shared_ptr<Player> player_to_add1(new Player(playerId, teamId, gamesPlayed, goals, cards, goalKeeper));
+        std::shared_ptr<Player> player_to_add2 = player_to_add1;
+        std::shared_ptr<Player> player_to_add3 = player_to_add1;
+        Node<std::shared_ptr<Player>, PlayerById> player_by_id(player_to_add1);
+        Node<std::shared_ptr<Player>, PlayerByRank> player_by_rank(player_to_add2);
+        Node<std::shared_ptr<Player>, PlayerByGoals> player_by_goals(player_to_add3);
+
+        allPlayers.r = allPlayers.insert(allPlayers.r, &player_by_id);
+        playersByRank.r = playersByRank.insert(playersByRank.r, &player_by_rank);
+        playersByGoals.r = playersByGoals.insert(playersByGoals.r, &player_by_goals);
+
+
+        // check if the new player is the new top player //
+        if(playersByRank.maxValueNode(playersByRank.r) -> value -> get_id() == player_by_rank.value->get_id())
+        {
+            topPlayer.swap(player_by_rank.value);
+        }
+
+        //std::cout << allTeams.r->value->getId() <<std::endl; //
+    }
+    catch(std::exception &e){
+        return StatusType::ALLOCATION_ERROR;
+    }
+
+    std::cout << "use count: " << allPlayers.r->value.use_count() << std::endl;
+
     return StatusType::SUCCESS;
 }
 
 StatusType world_cup_t::remove_player(int playerId)
 {
-    // TODO: Your code goes here
+    if (playerId <= 0)
+        return StatusType::INVALID_INPUT;
+
+    try {
+        if (allPlayers.height(allPlayers.r) == -1)
+            return StatusType::FAILURE;
+
+        Node<std::shared_ptr<Player>, PlayerById>* player_to_remove = find_player_by_id(allPlayers.r, playerId);
+        if (player_to_remove == nullptr)
+            return StatusType::FAILURE;
+        std::cout << "after find" << std::endl;
+
+        //remove from ranking tree
+        playersByRank.deleteNode(playersByRank.r, player_to_remove->value);
+        std::cout << "after delete from rank tree" << std::endl;
+
+        //if needed, replace the top player with the second best
+        if (topPlayer->get_id() == player_to_remove->value->get_id()){
+            topPlayer.reset(/*playersByRank.maxValueNode(playersByRank.r)->value*/);
+        }
+        std::cout << "after top player check" << std::endl;
+
+        //remove from goals tree
+        playersByGoals.deleteNode(playersByGoals.r, player_to_remove->value);
+        std::cout << "after delete from goals tree" << std::endl;
+
+
+        //std::cout << "use count: " << player_to_remove->value.use_count() << std::endl;
+
+        //remove from the main players tree
+        allPlayers.deleteNode(allPlayers.r, player_to_remove->value);
+        std::cout << "after delete from main tree" << std::endl;
+
+        std::cout << "height: " << (allPlayers.height(allPlayers.r)) << std::endl;
+
+        std::cout << "is root null: " << (allPlayers.r->value == nullptr) << std::endl;
+    }
+
+    catch (const std::exception &e) {
+        return StatusType::ALLOCATION_ERROR;
+    }
+
     return StatusType::SUCCESS;
+
 }
 
 StatusType world_cup_t::update_player_stats(int playerId, int gamesPlayed, int scoredGoals, int cardsReceived)
@@ -196,9 +273,10 @@ void delete_tree(AVLTree<std::shared_ptr<S>, Cond> t){
 }
 
 Node<std::shared_ptr<Player>, PlayerById>* find_player_by_id(Node<std::shared_ptr<Player>, PlayerById>* root, int id) {
-    if (root == nullptr) {
+    if (root == nullptr || root->value == nullptr) {
         return nullptr;
     }
+
     if ( root -> value -> get_id() < id) { //id > root id
         return find_player_by_id(root->right, id);
     }
@@ -212,7 +290,7 @@ Node<std::shared_ptr<Player>, PlayerById>* find_player_by_id(Node<std::shared_pt
 }
 
 template <class Cond>
-Node<std::shared_ptr<Player>, PlayerById>* find_player_by_cond(Node<std::shared_ptr<Player>, Cond>* root, Node<std::shared_ptr<Player>, Cond>* player)
+Node<std::shared_ptr<Player>, Cond>* find_player_by_cond(Node<std::shared_ptr<Player>, Cond>* root,Node<std::shared_ptr<Player>, Cond>* player)
  {
     Cond c = Cond();
 

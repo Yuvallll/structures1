@@ -107,8 +107,6 @@ int main() {
     test.insert(test.r, n2);
     test.insert(test.r, n3);
     test.insert(test.r, n4); */
-
-
     /*while (1){
         std::cout << "height of tree before removal: " << test.height(test.r) << std::endl;
         test.print2D(test.r, 5);

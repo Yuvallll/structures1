@@ -19,6 +19,12 @@ int Player::get_cards() const {
     return cardsReceived;
 }
 
+Player::~Player() {
+    all_players.value.reset();
+    team.value.reset();
+
+}
+
 
 
 

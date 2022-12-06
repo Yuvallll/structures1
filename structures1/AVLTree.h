@@ -17,7 +17,7 @@ public:
         right = nullptr;
     }
 
-    Node(T t): value(t){
+    Node(T t) : value(t){
         left = nullptr;
         right = nullptr;
     }
@@ -86,6 +86,7 @@ public:
             /// make new Node(!!) and insert the wanted value instead of using operator=
             root = new Node<T, Cond>;
             root -> value = new_node -> value;
+
             return root;
         }
 
@@ -138,7 +139,16 @@ public:
         return current;
     }
 
-    Node<T, Cond>* deleteNode(Node<T, Cond>* root, T val) {
+    Node<T, Cond> * maxValueNode(Node<T, Cond> * node) const{
+        Node<T, Cond> * current = node;
+        /* loop down to find the rightmost leaf */
+        while (current -> right != nullptr) {
+            current = current -> right;
+        }
+        return current;
+    }
+
+    Node<T, Cond>* Delete(Node<T, Cond>* root, T val) {
         Cond c = Cond();
 
         // base case
@@ -149,23 +159,25 @@ public:
             // If the key to be deleted is smaller than the root's key,
             // then it lies in left subtree
         else if (c(val, root->value)) { //val < root -> value
-            root -> left = deleteNode(root -> left, val);
+            root -> left = Delete(root -> left, val);
         }
             // If the key to be deleted is greater than the root's key,
             // then it lies in right subtree
         else if (c(root->value, val)) { //val > root -> value
-            root -> right = deleteNode(root -> right, val);
+            root -> right = Delete(root -> right, val);
         }
             // if key is same as root's key, then This is the node to be deleted
         else {
             // node with only one child or no child
             if (root -> left == nullptr) {
                 Node<T, Cond> * temp = root -> right;
+                root->value.reset();
                 delete root;
                 return temp;
             }
             else if (root -> right == nullptr) {
                 Node<T, Cond> * temp = root -> left;
+                root->value.reset();
                 delete root;
                 return temp;
             }
@@ -176,8 +188,8 @@ public:
                 // Copy the inorder successor's content to this node
                 root -> value = temp -> value;
                 // Delete the inorder successor
-                root -> right = deleteNode(root -> right, temp -> value);
-                //deleteNode(r->right, temp->value);
+                root -> right = Delete(root -> right, temp -> value);
+                //Delete(r->right, temp->value);
             }
         }
 
@@ -201,6 +213,20 @@ public:
 
         return root;
     }
+
+   Node<T, Cond>* deleteNode(Node<T, Cond>* root, T val)
+   {
+        if (root->left == nullptr && root->right == nullptr && root->value == val){
+            root->value = nullptr;
+            //delete root;
+            root = nullptr;
+            return nullptr;
+        }
+
+        else{
+            return Delete(root, val);
+        }
+   }
 
     void print2D(Node<T, Cond>* root, int space) {
         if (root == nullptr) // Base case  1

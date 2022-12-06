@@ -18,15 +18,19 @@ private:
     Node<std::shared_ptr<Player>, PlayerById> team;
 
 public:
-    Player(int playerId, int teamId, int gamesPlayed, int goals, int cards, int closest, bool goalKeeper):
+    Player(int playerId, int teamId, int gamesPlayed, int goals, int cards, bool goalKeeper):
         playerId(playerId),
         teamId(teamId),
         gamesPlayed(gamesPlayed),
         scoredGoals(goals),
+        closest(0),
         cardsReceived(cards),
-        closest(closest),
         isGoalKeeper(goalKeeper)
-    {};
+    {
+        all_players.value = nullptr;
+        team.value = nullptr;
+        // update closest player with other function
+    };
 
     ~Player();
 
