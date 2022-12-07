@@ -1,6 +1,5 @@
 #include "worldcup2a2.h"
 template <class Cond>
-
 void print2D(Node<std::shared_ptr<Player>, Cond>* root, int space) {
     if (root == nullptr) // Base case  1
         return;
@@ -14,6 +13,22 @@ void print2D(Node<std::shared_ptr<Player>, Cond>* root, int space) {
     std::cout << root -> value->get_id() << "\n"; // 6
     print2D(root -> left, space); // Process left child  7
 }
+
+template <class Cond>
+void print2D(Node<std::shared_ptr<Team>, Cond>* root, int space) {
+    if (root == nullptr) // Base case  1
+        return;
+
+    space += SPACE; // Increase distance between levels   2
+    print2D(root -> right, space); // Process right child first 3
+    std::cout << std::endl;
+
+    for (int i = SPACE; i < space; i++) // 5
+        std::cout << " "; // 5.1
+    std::cout << root -> value->getId() << "\n"; // 6
+    print2D(root -> left, space); // Process left child  7
+}
+
 
 template <class S, class Cond>
 void delete_tree(AVLTree<std::shared_ptr<S>, Cond> t);
@@ -53,10 +68,12 @@ StatusType world_cup_t::add_team(int teamId, int points)
         }
 
         std::shared_ptr<Team> team_to_add(new Team(teamId, points));
-        Node<std::shared_ptr<Team>, TeamById> to_add(std::move(team_to_add));// move? רק מעדכן את השורש
+        Node<std::shared_ptr<Team>, TeamById> to_add(team_to_add);
 
         allTeams.r =  allTeams.insert(allTeams.r, &to_add);
-        //std::cout << allTeams.r->value->getId() <<std::endl;
+
+        //std::cout <<allTeams.r->value.use_count()<< std::endl;
+        print2D(allTeams.r, 5);
     }
 
     catch (const std::exception& e) {
@@ -77,6 +94,12 @@ StatusType world_cup_t::remove_team(int teamId) {
 
         legalTeams.deleteNode(legalTeams.r, team_to_remove->value);
         allTeams.deleteNode(allTeams.r, team_to_remove->value);
+
+        std::shared_ptr<Team> team = team_to_remove->value;
+
+        team_to_remove = nullptr;
+
+        team.reset();
     }
 
     catch (const std::exception &e) {
@@ -91,11 +114,16 @@ StatusType world_cup_t::add_player(int playerId, int teamId, int gamesPlayed, in
         return StatusType::INVALID_INPUT;
     }
     // if there is a player with this ID or teamId does not exist //
-    if((find_player_by_id(allPlayers.r, playerId) != nullptr) || (find_team(allTeams.r, teamId) == nullptr))
-    { return StatusType::FAILURE; }
 
     try {
-        std::shared_ptr<Player> player_to_add1(new Player(playerId, teamId, gamesPlayed, goals, cards, goalKeeper));
+        Node<std::shared_ptr<Team>, TeamById>* team = find_team(allTeams.r, teamId);
+
+        if((find_player_by_id(allPlayers.r, playerId) != nullptr) || team == nullptr){
+            return StatusType::FAILURE;
+        }
+
+        std::shared_ptr<Player> player_to_add1(new Player(playerId, teamId, gamesPlayed, goals, cards, goalKeeper,
+                                                          team->value));
         std::shared_ptr<Player> player_to_add2 = player_to_add1;
         std::shared_ptr<Player> player_to_add3 = player_to_add1;
         Node<std::shared_ptr<Player>, PlayerById> player_by_id(player_to_add1);
@@ -106,13 +134,18 @@ StatusType world_cup_t::add_player(int playerId, int teamId, int gamesPlayed, in
         playersByRank.r = playersByRank.insert(playersByRank.r, &player_by_rank);
         playersByGoals.r = playersByGoals.insert(playersByGoals.r, &player_by_goals);
 
+
+        std::cout << team->value.use_count() << std::endl;
+
+        team->value->players.insert(team->value->players.r, &player_by_id);
+        team->value->playersByGoals.insert(team->value->playersByGoals.r, &player_by_goals);
+        team->value->playersByRank.insert(team->value->playersByRank.r, &player_by_rank);
+
         if (player_by_rank.value == nullptr)
             topPlayer = player_by_rank.value;
 
         // check if the new player is the new top player //
-        if (playersByRank.maxValueNode(playersByRank.r) -> value -> get_id() ==
-        player_by_rank.value->get_id())
-        {
+        if (playersByRank.maxValueNode(playersByRank.r) -> value -> get_id() == player_by_rank.value->get_id()){
             topPlayer.swap(player_by_rank.value);
         }
 
@@ -132,8 +165,7 @@ StatusType world_cup_t::add_player(int playerId, int teamId, int gamesPlayed, in
     return StatusType::SUCCESS;
 }
 
-StatusType world_cup_t::remove_player(int playerId)
-{
+StatusType world_cup_t::remove_player(int playerId){
     if (playerId <= 0)
         return StatusType::INVALID_INPUT;
 
@@ -150,13 +182,18 @@ StatusType world_cup_t::remove_player(int playerId)
 
         //if needed, replace the top player with the second best
         if (topPlayer->get_id() == player_to_remove->value->get_id()){
-            topPlayer.swap(playersByRank.maxValueNode(playersByRank.r)->value);
+            if (playersByRank.r == nullptr)
+                topPlayer = nullptr;
+
+            else
+                topPlayer.swap(playersByRank.maxValueNode(playersByRank.r)->value);
         }
+
+        player_to_remove->value->get_team().reset();
+        //player_to_remove->value->get_team()->removePlayer(player_to_remove->value);
 
         //remove from goals tree
         playersByGoals.deleteNode(playersByGoals.r, player_to_remove->value);
-
-        //std::cout << "use count: " << player_to_remove->value.use_count() << std::endl;
 
         //remove from the main players tree
         allPlayers.r = allPlayers.deleteNode(allPlayers.r, player_to_remove->value);
@@ -169,15 +206,20 @@ StatusType world_cup_t::remove_player(int playerId)
         }
 
         std::cout << "use count before last delete: " <<player_to_remove->value.use_count() << std::endl;
+        //player_to_remove->left = nullptr;
+        //player_to_remove->right = nullptr;
+        //player_to_remove ->value = nullptr;
 
-        player_to_remove->left = nullptr;
-        player_to_remove->right = nullptr;
-        player_to_remove -> value = nullptr;
+        std::shared_ptr<Player> player = player_to_remove->value;
 
-        std::cout << "use count after last delete: " <<player_to_remove->value.use_count() << std::endl;
+        player_to_remove = nullptr;
+
+        player.reset();
+
+        std::cout << "use count after last delete: " << player.use_count() << std::endl;
 
 
-        //std::cout << "height: " << (allPlayers.height(allPlayers.r)) << std::endl;
+        std::cout << "height: " << (allPlayers.height(allPlayers.r)) << std::endl;
 
         //std::cout << "is root null: " << (allPlayers.r == nullptr) << std::endl;
     }
@@ -192,20 +234,77 @@ StatusType world_cup_t::remove_player(int playerId)
 
 StatusType world_cup_t::update_player_stats(int playerId, int gamesPlayed, int scoredGoals, int cardsReceived)
 {
-    // TODO: Your code goes here
+    if (playerId <= 0 || gamesPlayed < 0 || scoredGoals < 0 || cardsReceived < 0)
+        return StatusType::INVALID_INPUT;
+
+    try {
+        Node<std::shared_ptr<Player>, PlayerById>* player_to_update = find_player_by_id(allPlayers.r, playerId);
+        if (player_to_update == nullptr)
+            return StatusType::FAILURE;
+
+        player_to_update->value->update_player_stats(gamesPlayed, scoredGoals, cardsReceived);
+    }
+    catch (const std::exception &e) {
+        return StatusType::ALLOCATION_ERROR;
+    }
+
     return StatusType::SUCCESS;
 }
 
 StatusType world_cup_t::play_match(int teamId1, int teamId2)
 {
-    // TODO: Your code goes here
+    if(teamId1 <= 0 || teamId2 <= 0 || teamId1 == teamId2)
+        return StatusType::INVALID_INPUT;
+
+    // check if teams can play
+    try {
+        Node<std::shared_ptr<Team>, TeamById> *team1 = find_team(legalTeams.r, teamId1);
+        Node<std::shared_ptr<Team>, TeamById> *team2 = find_team(legalTeams.r, teamId2);
+        if (team1 == nullptr || team2 == nullptr) {
+            return StatusType::FAILURE; }
+        int team1_points = ( team1 -> value -> getPoints() )
+                * (( team1 -> value -> getTotalGoals()) - (team1 -> value -> getTotalCards()));
+        int team2_points = ( team2 -> value -> getPoints() )
+                * (( team2 -> value -> getTotalGoals()) - (team2 -> value -> getTotalCards()));
+         //there is a tie
+        if (team1_points == team2_points){
+            team1 -> value -> setPoints((team1 -> value -> getPoints()) + 1);
+            team2 -> value -> setPoints((team2 -> value -> getPoints()) + 1);
+        }
+
+        // team1 won
+        if (team1_points > team2_points){
+            team1 -> value -> setPoints((team1 -> value -> getPoints()) + 3);
+        }
+        else
+        {
+            team2 -> value -> setPoints((team2 -> value -> getPoints()) + 3);
+        }
+    }
+    catch (const std::exception &e) {
+        return StatusType::ALLOCATION_ERROR;
+    }
+
+    // add 1 to gamesPlayed of players
+
     return StatusType::SUCCESS;
 }
 
 output_t<int> world_cup_t::get_num_played_games(int playerId)
 {
-    // TODO: Your code goes here
-    return 22;
+    if (playerId <= 0)
+        return output_t<int>(StatusType::INVALID_INPUT);
+
+    try {
+        Node<std::shared_ptr<Player>, PlayerById> *player = find_player_by_id(allPlayers.r, playerId);
+
+        if (player == nullptr)
+            return output_t<int>(StatusType::FAILURE);
+
+        return output_t<int>(player ->value -> get_games_played());
+
+    } catch (std::exception &e)
+    { return output_t<int>(StatusType::ALLOCATION_ERROR); }
 }
 
 output_t<int> world_cup_t::get_team_points(int teamId)
@@ -289,10 +388,11 @@ void delete_tree(AVLTree<std::shared_ptr<S>, Cond> t){
     }*/
 }
 //Team*
-    Node<std::shared_ptr<Team>, TeamById>* find_team(Node<std::shared_ptr<Team>, TeamById>* root, int id){
+Node<std::shared_ptr<Team>, TeamById>* find_team(Node<std::shared_ptr<Team>, TeamById>* root, int id){
     if (root == nullptr) {
         return nullptr;
     }
+
     if (root -> value -> getId() < id) { //id > root id
         return find_team(root -> right, id);
     }
@@ -306,7 +406,7 @@ void delete_tree(AVLTree<std::shared_ptr<S>, Cond> t){
 }
 
 Node<std::shared_ptr<Player>, PlayerById>* find_player_by_id(Node<std::shared_ptr<Player>, PlayerById>* root, int id) {
-    if (root == nullptr || root->value == nullptr) {
+    if (root == nullptr) {
         return nullptr;
     }
 

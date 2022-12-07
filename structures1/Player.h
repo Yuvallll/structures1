@@ -4,6 +4,7 @@
 //#include <memory>
 
 class PlayerById;
+class Team;
 
 class Player {
 private:
@@ -15,20 +16,20 @@ private:
     int closest;
     bool isGoalKeeper;
     Node<std::shared_ptr<Player>, PlayerById> all_players;
-    Node<std::shared_ptr<Player>, PlayerById> team;
+    //Node<std::shared_ptr<Team>, PlayerById> team;
+    std::shared_ptr<Team> team;
 
 public:
-    Player(int playerId, int teamId, int gamesPlayed, int goals, int cards, bool goalKeeper):
+    Player(int playerId, int teamId, int gamesPlayed, int goals, int cards, bool goalKeeper, std::shared_ptr<Team> t):
         playerId(playerId),
         teamId(teamId),
         gamesPlayed(gamesPlayed),
         scoredGoals(goals),
         closest(0),
         cardsReceived(cards),
-        isGoalKeeper(goalKeeper)
+        isGoalKeeper(goalKeeper),
+        team(t)
     {
-        all_players.value = nullptr;
-        team.value = nullptr;
         // update closest player with other function
     };
 
@@ -40,7 +41,11 @@ public:
 
     int get_cards() const;
 
-    void update_player_stats(int playerId, int gamesPlayed, int scoredGoals, int cardsReceived);
+    int get_games_played() const;
+
+    std::shared_ptr<Team>& get_team();
+
+    void update_player_stats(int gamesPlayed, int scoredGoals, int cardsReceived);
 
 };
 

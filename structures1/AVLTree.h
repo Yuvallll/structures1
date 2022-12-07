@@ -130,7 +130,7 @@ public:
 
     }
 
-    Node<T, Cond> * minValueNode(Node<T, Cond> * node) const{
+    Node<T, Cond>* minValueNode(Node<T, Cond> * node) const{
         Node<T, Cond> * current = node;
         /* loop down to find the leftmost leaf */
         while (current -> left != nullptr) {
@@ -139,7 +139,7 @@ public:
         return current;
     }
 
-    Node<T, Cond> * maxValueNode(Node<T, Cond> * node) const{
+    Node<T, Cond>* maxValueNode(Node<T, Cond> * node) const{
         Node<T, Cond> * current = node;
         /* loop down to find the rightmost leaf */
         while (current -> right != nullptr) {
@@ -172,13 +172,13 @@ public:
             if (root -> left == nullptr) {
                 Node<T, Cond> * temp = root -> right;
                 //delete root; >> causes problems
-                root = nullptr;
+                //root = nullptr;
                 return temp;
             }
             else if (root -> right == nullptr) {
                 Node<T, Cond> * temp = root -> left;
                 //delete root;
-                root = nullptr;
+                //root = nullptr;
                 return temp;
             }
             else {
@@ -233,11 +233,14 @@ public:
     void print2D(Node<T, Cond>* root, int space) {
         if (root == nullptr) // Base case  1
             return;
+
         space += SPACE; // Increase distance between levels   2
         print2D(root -> right, space); // Process right child first 3
         std::cout << std::endl;
+
         for (int i = SPACE; i < space; i++) // 5
             std::cout << " "; // 5.1
+
         std::cout << root -> value << "\n"; // 6
         print2D(root -> left, space); // Process left child  7
     }
