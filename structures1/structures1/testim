@@ -1,0 +1,19 @@
+add_team 1 10000
+
+add_player 21 1 1 1 20 false
+add_player 25 1 1 1 20 false
+add_player 3 1 1 1 5 false
+
+add_player 4 1 1 1 1 false
+add_player 5 1 1 2 5 false
+add_player 6 1 1 2 4 false
+
+get_closest_player 6 1
+
+remove_player 25
+remove_player 1001
+remove_player 1003
+remove_player 1004
+remove_player 1005
+
+add_player 1002 1 10 0 0 false
